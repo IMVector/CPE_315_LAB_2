@@ -2,10 +2,11 @@ import java.io.*;
 import java.util.*;
 
 public class Assembly_Parser {
-
 	public static void main(String[] args) throws Exception {
-		List<String>list = new ArrayList<String>();
-		int i = 0;
+	    String[] commands = {"and", "or", "add", "addi", "sll", "sub", "slt", "beq", "bne", "lw", "sw", "j", "jr", "jal"};
+        List<String>list = new ArrayList<String>();
+		String[] labels = new String[100];
+		int i = 1;
 		try{
 	        File input = new File("input1.txt");
 	        File output = new File("output1.txt");
@@ -22,28 +23,42 @@ public class Assembly_Parser {
 	        	else if(copy.charAt(0) == '#'){}                   /* Check if the first element is a comment sig     */
 	        	
 	        	else{
+	        		line = line.trim();
 	        		if(line.contains("#")){
 	        	       line = line.split("#")[0];                 /* Gets rid of any comments that happens after instructions */
 	        	       if(is_label(line)){
-		        	       String[] parts = line.split(":");       /* Split the string at the colon */
-		        	       String part1 = parts[0];                /* The first part of the split string */
-		        	       list.add(part1.trim());
-		        	       String part2 = parts[1];                /* The second part of the split string */
-		        	       list.add(part2.trim());
-		        	    }
+	        	    	   labels[i] = line;
+	        	    	   String[] parts = line.split("\\:");
+	        	           String part = parts[1];
+	        	           if(part.contains("$")){
+			        			part = part.split("\\$")[0];
+	        	    	   }
+	        	    	   list.add(part.trim());    /* Add the line of the label at end of string */
+	        	    	   i++;
+		        	   }
+	        	       else if(line.contains("$")){
+		        			line = line.split("\\$")[0];
+		        			list.add(line.trim());
+		        			i++;
+		        	   }
 	        	       else{
 	        	          list.add(line.trim());                     /* Trim cuts the whitespace before and after the string */
 	        	          i++;
 	        	       }
 	        		}
+	        		else if(line.contains("$")){
+	        			line = line.split("\\$")[0];
+	        			list.add(line.trim());
+	        		}
+	        		else if(line.contains(" ")){
+		        			line = line.split(" ")[0];
+		        			list.add(line.trim());
+		        			i++;
+		        	}
 	        		else{
 	        			if(is_label(line)){
-		        	          String[] parts = line.split(":");       
-		        	          String part1 = parts[0];                
-		        	          list.add(part1.trim());
-		        	          String part2 = parts[1];
-		        	          if(part2.trim().isEmpty()){}
-		        	          else{list.add(part2.trim());}
+	        	    	   labels[i] = line;       /* Adds label to the index that represents the line it was found on */
+		        	       i++;
 	        			}
 	        			else{
 	        			   list.add(line.trim());                    
@@ -52,13 +67,15 @@ public class Assembly_Parser {
 	        		}
 	        	}                                                  /* Add the line to the list                             */
 	        }
-	        printer.write("[");
 	        for(String str:list){                                  /* This loops writes out the elements that were    */
-	        	printer.write(str);                                /* added to the list into a output text file.      */
-	        	printer.write(",  ");
-	            printer.write("\n");                               /* Format: [t1, t2, t3]                            */
+	        	   check_instruction(str, commands);
+	        }	                                                           
+	        for(String str:list){                                  /* This loops writes out the elements that were    */
+	        	   String opr = opcode(str);
+	        	   printer.write(opr);                                /* added to the list into a output text file.      */
+	               printer.write("\n");                               /* Format: [t1, t2, t3]                            */
+	        	
 	        }
-	        printer.write("]");
 	        sc.close();
 	        printer.close();
 		}
@@ -85,5 +102,62 @@ public class Assembly_Parser {
 			return false;
 		}
 	}
+	
+	public static void check_instruction(String instr, String[] instructions)throws Exception{
+	    if(!Arrays.asList(instructions).contains(instr)){
+	       throw new Exception("NOT A VALID COMMAND");
+	    }
+	}
+	
+	public static String opcode(String cmd){
+		String opcode = null;
+		switch(cmd){
+		case "and":
+			opcode = "000000";
+			break;
+		case "or":
+			opcode = "000000";
+			break;
+		case "add":
+			opcode = "000000";
+			break;
+		case "addi":
+			opcode = "001000";
+			break;
+		case "sll":
+			opcode = "000000";
+			break;
+		case "sub":
+			opcode = "000000";
+			break;
+		case "slt":
+			opcode = "000000";
+			break;
+		case "beq":
+			opcode = "000100";
+			break;
+		case "bne":
+			opcode = "000101";
+			break;
+		case "lw":
+			opcode = "100011";
+			break;
+		case "sw":
+			opcode = "101011";
+			break;
+		case "j":
+			opcode = "000010";
+			break;
+		case "jr":
+			opcode = "000000";
+			break;
+		case "jal":
+			opcode = "000011";
+			break;
+		}
+		return opcode;
+	}
+	
+	
 
 }
