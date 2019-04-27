@@ -14,68 +14,25 @@ public class Assembly_Parser {
 	        PrintWriter printer =new PrintWriter(output);
 	        while(sc.hasNext()){
 	        	
-	        	String line = sc.nextLine();                       /* Reads line by line the text file content        */
-	        	String copy;                                       /* Make a copy so that the original does not alter */
-	        	copy = line.replaceAll("\\s+","");                 /* Gets rid of all the white space                 */
+	        	String line = sc.nextLine();                                    /* Reads line by line the text file content        */
+	        	String condensed_string;                                       /* Make a copy so that the original does not alter */
+	        	condensed_string = line.replaceAll("\\s+","");                 /* Gets rid of all the white space                 */
 	        	
-	        	if(copy.trim().isEmpty()){}                        /* Check for empty lines                           */
+	        	if(condensed_string.trim().isEmpty()){}                        /* Check for empty lines                           */
 	        	
-	        	else if(copy.charAt(0) == '#'){}                   /* Check if the first element is a comment sig     */
+	        	else if(condensed_string.charAt(0) == '#'){}                   /* Check if the first element is a comment sig     */
 	        	
-	        	else{
-	        		line = line.trim();
-	        		if(line.contains("#")){
-	        	       line = line.split("#")[0];                 /* Gets rid of any comments that happens after instructions */
-	        	       if(is_label(line)){
-	        	    	   labels[i] = line;
-	        	    	   String[] parts = line.split("\\:");
-	        	           String part = parts[1];
-	        	           if(part.contains("$")){
-			        			part = part.split("\\$")[0];
-	        	    	   }
-	        	    	   list.add(part.trim());    /* Add the line of the label at end of string */
-	        	    	   i++;
-		        	   }
-	        	       else if(line.contains("$")){
-		        			line = line.split("\\$")[0];
-		        			list.add(line.trim());
-		        			i++;
-		        	   }
-	        	       else{
-	        	          list.add(line.trim());                     /* Trim cuts the whitespace before and after the string */
-	        	          i++;
-	        	       }
-	        		}
-	        		else if(line.contains("$")){
-	        			line = line.split("\\$")[0];
-	        			list.add(line.trim());
-	        		}
-	        		else if(line.contains(" ")){
-		        			line = line.split(" ")[0];
-		        			list.add(line.trim());
-		        			i++;
-		        	}
-	        		else{
-	        			if(is_label(line)){
-	        	    	   labels[i] = line;       /* Adds label to the index that represents the line it was found on */
-		        	       i++;
-	        			}
-	        			else{
-	        			   list.add(line.trim());                    
-	        			   i++;
-	        			}
-	        		}
-	        	}                                                  /* Add the line to the list                             */
+	        	else{ list = instruction_list(line, list); }
+	        	                                                 
 	        }
-	        for(String str:list){                                  /* This loops writes out the elements that were    */
-	        	   check_instruction(str, commands);
-	        }	                                                           
-	        for(String str:list){                                  /* This loops writes out the elements that were    */
-	        	   String opr = opcode(str);
-	        	   printer.write(opr);                                /* added to the list into a output text file.      */
-	               printer.write("\n");                               /* Format: [t1, t2, t3]                            */
-	        	
-	        }
+	        
+	        /* Checks for invalid instructions */
+	        instruction_processesor(list, commands);
+	        
+	        /* Writing opcodes to output text file */
+	        write_to_out(list, printer);
+	        
+	        /* Must close scanner and printer */
 	        sc.close();
 	        printer.close();
 		}
@@ -84,6 +41,97 @@ public class Assembly_Parser {
 		}
 	}
 	
+	public static String[] labels_locator(String line, String[] labels, int i) {
+		line = line.trim();
+		if(line.contains("#")){
+	       line = line.split("#")[0];                 /* Gets rid of any comments that happens after instructions */
+	       if(is_label(line)){
+	    	   labels[i] = line;
+	    	   /*String[] parts = line.split("\\:");
+	           String part = parts[1];
+	           part = no_money_sign(part);
+	    	   list.add(part.trim());                 /* Add the line of the label at end of string */
+	    	   /*i++;*/
+    	   }
+		}
+		else{
+			if(is_label(line)){
+				labels[i] = line;       /* Adds label to the index that represents the line it was found on */
+				/*i++;*/
+			}
+		}
+		return labels;	
+	}
+	
+	public static List<String> instruction_list(String line, List<String> list){
+		line = line.trim();
+		if(line.contains("#")){
+	       line = line.split("#")[0];                 /* Gets rid of any comments that happens after instructions */
+	       if(is_label(line)){
+	    	   /*labels[i] = line;*/
+	    	   String[] parts = line.split("\\:");
+	           String part = parts[1];
+	           part = no_money_sign(part);
+	    	   list.add(part.trim());                 /* Add the line of the label at end of string */
+	    	   /*i++;*/
+    	   }
+	       else if(line.contains("$")){
+    			line = line.split("\\$")[0];
+    			list.add(line.trim());
+    			/*i++;*/
+    	   }
+	       else{
+	          list.add(line.trim());                     /* Trim cuts the whitespace before and after the string */
+	          /*i++;*/
+	       }
+		}
+		else if(line.contains("$")){
+			line = line.split("\\$")[0];
+			list.add(line.trim());
+		}
+		else if(line.contains(" ")){
+    			line = line.split(" ")[0];
+    			list.add(line.trim());
+    			/*i++;*/
+    	}
+		else{
+			if(is_label(line)){
+				/*labels[i] = line;*/       /* Adds label to the index that represents the line it was found on */
+				/*i++;*/
+			}
+			else{
+			   list.add(line.trim());                    
+			   /*i++;*/
+			}
+		}
+		return list;
+	}
+	
+	/* Checks for invalid instructions */
+	public static void instruction_processesor(List<String> list, String[] commands) throws Exception {
+		for(String s:list){                                  /* This loops writes out the elements that were    */
+     	   check_instruction(s, commands);
+        }	
+	}
+	
+	/* Takes arraylist, reads commands, finds opcodes for commands, prints to output */
+	public static void write_to_out(List<String> list, PrintWriter printer) {
+		for(String str:list){                                  /* This loops writes out the elements that were    */
+     	   String opr = opcode(str);
+     	   printer.write(opr);                                /* added to the list into a output text file.      */
+           printer.write("\n");                           
+     	}
+	}
+	
+	/* Gets rid of characters after first money sign */
+	public static String no_money_sign(String line) {
+		if(line.contains("$")){
+			line = line.split("\\$")[0];
+	   }
+	   return line;
+	}
+	
+	/* Checks if labels have valid characters */
 	public static String label_check(String label) throws Exception{
 		for(int i = 0; i < label.length(); i++){
 			char c = label.charAt(i);
@@ -94,6 +142,7 @@ public class Assembly_Parser {
 		return label;
 	}
 	
+	/* Checks for labels */
 	public static Boolean is_label(String s){
 		if(s.contains(":")){
 			return true;
@@ -103,12 +152,14 @@ public class Assembly_Parser {
 		}
 	}
 	
+	/* Check for valid instructions */
 	public static void check_instruction(String instr, String[] instructions)throws Exception{
 	    if(!Arrays.asList(instructions).contains(instr)){
 	       throw new Exception("NOT A VALID COMMAND");
 	    }
 	}
 	
+	/* Find opcode for instruction */
 	public static String opcode(String cmd){
 		String opcode = null;
 		switch(cmd){
