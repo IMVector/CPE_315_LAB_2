@@ -25,16 +25,19 @@ public class Assembly_Parser {
 	        	String condensed_string;                                           /* Make a copy so that the original does not alter */
 	        	condensed_string = line.replaceAll("\\s+","");                     /* Gets rid of all the white space                 */
 	        	
-	        	if(condensed_string.trim().isEmpty()) {}                        /* Check for empty lines                           */
+	        	if(condensed_string.trim().isEmpty()) {}                           /* Check for empty lines                           */
 	        	
-	        	else if(condensed_string.charAt(0) == '#'){}                   /* Check if the first element is a comment sig     */
+	        	else if(condensed_string.charAt(0) == '#'){}                       /* Check if the first element is a comment sig     */
 	        	
 	        	else{ 
 	        		  String instruction_copy = line;
 	        		  String i_copy = line;
-	        		  String arg1_copy = line;      /* Finds rd in format rd, rs, rt */
-	        		  String arg2_copy = line;      /* Finds rs in format rd, rs, rt */
-	        		  String arg3_copy = line;      /* Finds rt in format rd, rs, rt */
+	        		  String arg1_copy = line;         /* Finds rd in format rd, rs, rt */
+	        		  String arg2_copy = line;         /* Finds rs in format rd, rs, rt */
+	        		  String arg2_copy2 = line;        /* Finds rs in format rd, rs, rt - specific for lw and sw */
+	        		  String arg2_copy3 = line;        /* Finds rs in format rd, rs, rt - specific for lw and sw */
+	        		  String arg2_copy4 = line;        /* Finds rs in format rd, rs, rt - specific for lw and sw */
+	        		  String arg3_copy = line;         /* Finds rt in format rd, rs, rt */
 	        		  
 	        		  /* Creates an array for the rd arguments */
 	        		  arg1_copy = arg1_copy.trim();
@@ -59,6 +62,45 @@ public class Assembly_Parser {
 	        		     }
 	        		  }
 	        		  
+	        		  /* Creates an array for the rs arguments, ignores the instructions - j, jal, and jr */
+	        		  arg2_copy2 = arg2_copy2.trim();
+	        		  if(arg2_copy2.contains("$")) {
+	        			  if(arg2_copy2.contains("sw") || arg2_copy2.contains("lw")) {
+	        				  arg2_copy2 = arg2_copy2.split("\\,")[1];
+	        				  arg2_copy2 = arg2_copy2.split("\\(")[0].trim();
+	        				  args3[i] = arg2_copy2;
+	        			  }
+	        			  else {}
+	        		  }
+	        		  
+	        		  /* Creates an array for the rs arguments, ignores the instructions - j, jal, and jr */
+	        		  arg2_copy3 = arg2_copy3.trim();
+	        		  if(arg2_copy3.contains("$")) {
+	        			  if(arg2_copy3.contains("sw") || arg2_copy3.contains("lw")) {
+	        				  arg2_copy3 = arg2_copy3.split("\\$")[2];
+	        				  arg2_copy3 = arg2_copy3.split("\\)")[0];
+	        				  args2[i] = arg2_copy3;
+	        			  }
+	        			  else {}
+	        		  }
+	        		  
+	        		  /* Creates an array for the rs arguments */
+	        		  arg2_copy4 = arg2_copy4.trim();
+        			  if(arg2_copy4.contains("j")) {
+    	        		  if(arg2_copy4.contains("$")) {
+        				     arg2_copy4 = arg2_copy4.split("\\$")[1];
+        				     args1[i] = arg2_copy4.trim();
+    	        		  }
+    	        		  else {
+    	        			 
+    	        			  arg2_copy4 = arg2_copy4.split("\\s+")[1];
+         				      args1[i] = arg2_copy4.trim();
+    	        		  }
+        			  }
+        			  else {}
+	        		  
+	        		  
+	        		  
 	        		  /* Creates an array for the rt arguments, ignores the instructions - sw, lw, j, jal, and jr */
 	        		  arg3_copy = arg3_copy.trim();
 	        		  if(arg3_copy.contains("$")) {
@@ -78,13 +120,16 @@ public class Assembly_Parser {
 	        	                               
 	        }
 	        
+	        
 	        for(int l = 1; l < args1.length -1 ; l++) {
 	        	  System.out.print(cmds[l] + "   ");
 	  	    	  System.out.print(args1[l] + "   ");
 	  	    	  System.out.print(args2[l] + "   ");
 	  	    	  System.out.print(args3[l] + "   ");
+	  	    	  System.out.print(labels[l] + "   ");
 	  	    	  System.out.print("\n");
 	  	    } 
+	  	    
 	       
 	        /* Checks for invalid instructions */
 	        instruction_processesor(list, commands, cmds);
@@ -140,17 +185,21 @@ public class Assembly_Parser {
 		line = line.trim();
 		if(line.contains("#")){
 	       line = line.split("#")[0];                                        /* Gets rid of any comments that happens after instructions */
+	       System.out.print(line);
+	       System.out.print("\n");
 	       if(is_label(line)){                                               /* Only the label */
 	    	   String[] parts = line.split("\\:");
 	           String part = parts[0];
 	           part = no_money_sign(part);
-	           
 	           labels[i] = part;
+	           
     	   }
 		}
 		else{
 			if(is_label(line)){
-				line = line.split("\\:")[0];
+				
+				line = line.split(":")[0];
+				
 				labels[i] = line;                                             /* Adds label to the index that represents the line it was found on */
 				
 			}
@@ -164,10 +213,17 @@ public class Assembly_Parser {
 	       line = line.split("#")[0];                                        /* Gets rid of any comments that happens after instructions */
 	       if(is_label(line)){
 	    	   String[] parts = line.split("\\:");
-	           String part = parts[1];
-	           part = no_money_sign(part);
-	    	   list.add(part.trim());                                        /* Add the line of the label at end of string */
-	    	   cmds[i] = part.trim();
+	           String part = parts[1].trim();
+	           if(part.length() > 1) {
+	        	   part = no_money_sign(part);
+	        	   part = part.split(" ")[0];
+	        	   cmds[i] = part;
+	           }
+	           else {
+	              part = no_money_sign(part);
+	    	      list.add(part.trim());                                        /* Add the line of the label at end of string */
+	    	      cmds[i] = part.trim();
+	           }
     	   }
 	       else if(line.contains("$")){
     			line = line.split("\\$")[0];
@@ -181,9 +237,18 @@ public class Assembly_Parser {
 	       }
 		}
 		else if(line.contains("$")){
-			line = line.split("\\$")[0];
-			list.add(line.trim());
-			cmds[i] = line.trim();
+			if(is_label(line)) {
+				line = line.split("\\:")[1];
+				if(line.contains("$")) {
+				   line = line.split("\\$")[0].trim();	
+				}
+				cmds[i] = line.trim();
+			}
+			else {
+			   line = line.split("\\$")[0];
+			   list.add(line.trim());
+			   cmds[i] = line.trim();
+			}
 		}
 		else if(line.contains(" ")){
     			line = line.split(" ")[0];
@@ -195,12 +260,20 @@ public class Assembly_Parser {
 				String[] parts = line.split(":");
 				if(parts.length == 1) {}
 				else {
-				   String part1 = parts[1]; 
-				   cmds[i] = part1;
+				   String part1 = parts[1];
+				   if(part1.length() > 1) {
+				      String[] parts1 = part1.split(" ");
+				      String parts1_2 = parts1[0];
+				      cmds[i] = parts1_2;
+				   }
+				   else {
+					   cmds[i] = part1;
+				   }
+				  
 				}
 			}
 			else{
-				list.add(line.trim());
+				 list.add(line.trim());
 				 cmds[i] = line.trim();
 		    }
 		}
@@ -223,16 +296,22 @@ public class Assembly_Parser {
 			   if(cmds[y] == null) {}
 			   else {
 				  if(args1[y] == null) {}
-				  else if(cmds[y].equals("sw")) {
-					  System.out.print(cmds[y] + " ");
-					  System.out.print(args1[y]);
-				  }
-				  else if(cmds[y].equals("lw")) {
-					  System.out.print(cmds[y] + " ");
-					  System.out.print(args1[y]);
-				  }
 				  else {
-					  if(args2[y] == null) {}
+					  if(args2[y] == null) {
+						 if(cmds[y].equals("jal") || cmds[y].equals("j")) {
+							 int li = Arrays.asList(labels).indexOf(args1[y]);
+							 String imm = convertBinary(li - 1, 26);
+							 String opr = jump_opcode(cmds[y], args1[y], imm);
+							 printer.write(opr);                                
+		                     printer.write("\n");
+						 }
+						 if(cmds[y].equals("jr")) {
+					         String opr = jump_opcode(cmds[y], args1[y], "");
+					         printer.write(opr);                                
+		                     printer.write("\n");
+						
+						 }
+					  }
 					  else {
 						 if(args3[y] == null) {}
 						 else {
@@ -255,8 +334,7 @@ public class Assembly_Parser {
 										   jumps = 0 - diff;
 										   args3[k] = null;                                               /* Loops for every instruction, setting args3[k] to null helps not repeat the same index */
 		                                   break;
-									    
-									   }
+									  }
 							       }  
 							    }
 							    
@@ -269,8 +347,8 @@ public class Assembly_Parser {
 								if(cmds[y].equals("addi")) {
 									String imm = convertBinary(Integer.parseInt(args3[y]), 16);
 									String opr = immediate_opcode(cmds[y], args1[y], args2[y], imm); 
-									 printer.write(opr);                                                      
-				                     printer.write("\n");
+									printer.write(opr);                                                      
+				                    printer.write("\n");
 								}
 								else if(cmds[y].equals("sll")) {
 									String imm1 = convertBinary(Integer.parseInt(args3[y]), 5);
@@ -279,12 +357,23 @@ public class Assembly_Parser {
 			                        printer.write("\n");
 								}
 								else {
-									String imm1 = convertBinary(Integer.parseInt(args3[y]), 16);                  /* For branch instructions */
-									String opr2 = branch_opcode(cmds[y], args2[y], args3[y], imm1); 
-			     	                printer.write(opr2);                                                        
-			                        printer.write("\n");
+									if(cmds[y].equals("bne") || cmds[y].equals("beq")) {
+										int li = Arrays.asList(labels).indexOf(args3[y]);
+										System.out.print(Integer.toString(li));
+										System.out.print("\n");
+										String imm1 = convertBinary(li, 16);                                         /* For branch instructions */
+										String opr2 = branch_opcode(cmds[y], args1[y], args2[y], imm1); 
+				     	                printer.write(opr2);                                                        
+				                        printer.write("\n");
+									}
+									else {
+										
+										String imm1 = convertBinary(Integer.parseInt(args3[y]), 16);                                         /* For branch instructions */
+										String opr2 = immediate_opcode(cmds[y], args1[y], args2[y], imm1); 
+				     	                printer.write(opr2);                                                        
+				                        printer.write("\n");
+									}
 								}
-								
 							}    
 						 }
 					  }
@@ -357,7 +446,6 @@ public class Assembly_Parser {
 	/* Check for valid instructions */
 	public static void check_instruction(String instr, String[] instructions)throws Exception{
 	    if(!Arrays.asList(instructions).contains(instr)){
-	    	System.out.print(instr);
 	       throw new Exception("NOT A VALID COMMAND:");
 	    }
 	}
@@ -370,7 +458,7 @@ public class Assembly_Parser {
 		String a3 = arg_opcode(arg3);   /* rt */
 		switch(cmd){
 		case "and":
-			opcode = "000000 " + a2 + " " +  a3 + " rd 00000 100100";   /* rs rt rd */
+			opcode = "000000 " + a2 + " " +  a3 + " " + a1 + " 00000 100100";   /* rs rt rd */
 			break;
 		case "or":
 			opcode = "000000 " + a2 + " " + a3  + " " + a1 + " 00000 100101";
@@ -404,15 +492,39 @@ public class Assembly_Parser {
 	}
 	
 	/* Find opcode for instruction */
+	public static String jump_opcode(String cmd, String arg1, String imm){
+		String opcode = null;
+		String a1 = arg_opcode(arg1);   /* rt */
+		switch(cmd){
+		case "j":
+			opcode = "000010 " + imm;
+			break;
+		case "jr":
+			opcode = "000000 " + a1 + " 000000000000000 001000";
+			break;
+		case "jal":
+			opcode = "000011 " + imm;
+			break;
+	    }
+		return opcode;
+	}
+	
+	/* Find opcode for instruction */
 	public static String immediate_opcode(String cmd, String arg1, String arg2, String imm){
 		String opcode = null;
 		String a1 = arg_opcode(arg1);   /* rt */
-		String a2 = arg_opcode(arg2);   /* rs */      /* rd rs rt */
+		String a2 = arg_opcode(arg2);   /* rs  */      /* rd rs rt */
 		switch(cmd){
 		case "addi":
-			opcode = "001000 " + a1 + " " + a2 + " " + imm;
+			opcode = "001000 " + a2 + " " + a1 + " " + imm;
 			break;
-		}
+		case "sw":
+			opcode = "101011 " + a2 + " " + a1 + " " + imm;
+			break;
+		case "lw":
+			opcode = "100011 " + a2 + " " + a1 + " " + imm;
+			break;
+	    }
 		return opcode;
 	}
 	
