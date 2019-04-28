@@ -36,7 +36,7 @@ public class Assembly_Parser {
 	        		  String arg2_copy = line;         /* Finds rs in format rd, rs, rt */
 	        		  String arg2_copy2 = line;        /* Finds rs in format rd, rs, rt - specific for lw and sw */
 	        		  String arg2_copy3 = line;        /* Finds rs in format rd, rs, rt - specific for lw and sw */
-	        		  String arg2_copy4 = line;        /* Finds rs in format rd, rs, rt - specific for lw and sw */
+	        		  String arg2_copy4 = line;        /* Finds rs in format rd, rs, rt - specific for j instr */
 	        		  String arg3_copy = line;         /* Finds rt in format rd, rs, rt */
 	        		  
 	        		  /* Creates an array for the rd arguments */
@@ -100,7 +100,6 @@ public class Assembly_Parser {
         			  else {}
 	        		  
 	        		  
-	        		  
 	        		  /* Creates an array for the rt arguments, ignores the instructions - sw, lw, j, jal, and jr */
 	        		  arg3_copy = arg3_copy.trim();
 	        		  if(arg3_copy.contains("$")) {
@@ -120,24 +119,8 @@ public class Assembly_Parser {
 	        	                               
 	        }
 	        
-	        
-	        for(int l = 1; l < args1.length -1 ; l++) {
-	        	  System.out.print(cmds[l] + "   ");
-	  	    	  System.out.print(args1[l] + "   ");
-	  	    	  System.out.print(args2[l] + "   ");
-	  	    	  System.out.print(args3[l] + "   ");
-	  	    	  System.out.print(labels[l] + "   ");
-	  	    	  System.out.print("\n");
-	  	    } 
-	  	    
-	       
-	        /* Checks for invalid instructions */
-	        instruction_processesor(list, commands, cmds);
-	        
 	        /* Writing opcodes to output text file */
-	        write_to_out(list, printer, cmds, args1, args2, args3, registers, labels); 
-	        
-	       
+	        write_to_out(list, printer, cmds, args1, args2, args3, registers, labels, commands); 
 	        
 	        /* Must close scanner and printer */
 	        sc.close();
@@ -280,20 +263,16 @@ public class Assembly_Parser {
 		return cmds;
 	}
 	
-	/* Checks for invalid instructions */
-	public static void instruction_processesor(List<String> list, String[] commands, String[] cmds) throws Exception {
-		for(int y = 0; y < cmds.length; y++){                                  /* This loops writes out the elements that were    */
-		   if(cmds[y] == null) {}
-		   else { check_instruction(cmds[y], commands); }
-        }	
-	}
-	
-	
 	
 	/* Takes arraylist, reads commands, finds opcodes for commands, prints to output */
-	public static void write_to_out(List<String> list, PrintWriter printer, String[] cmds, String[] args1, String[] args2, String[] args3, String[] registers, String[] labels) {
-		for(int y = 0; y < cmds.length; y++){                                 
+	public static void write_to_out(List<String> list, PrintWriter printer, String[] cmds, String[] args1, String[] args2, String[] args3, String[] registers, String[] labels, String[] commands) throws Exception, Exception {
+		for(int y = 0; y < cmds.length; y++){
 			   if(cmds[y] == null) {}
+			   else if(check_instruction(cmds[y], commands) == false) {
+				   printer.write("invalid instruction: ");
+				   printer.write(cmds[y]);
+				   break;
+			   }
 			   else {
 				  if(args1[y] == null) {}
 				  else {
@@ -444,10 +423,12 @@ public class Assembly_Parser {
 	}
 	
 	/* Check for valid instructions */
-	public static void check_instruction(String instr, String[] instructions)throws Exception{
+	public static boolean check_instruction(String instr, String[] instructions)throws Exception{
+		boolean is_valid_instr = true;
 	    if(!Arrays.asList(instructions).contains(instr)){
-	       throw new Exception("NOT A VALID COMMAND:");
+	       is_valid_instr = false;
 	    }
+	    return is_valid_instr;
 	}
 	
 	/* Find opcode for instruction */
