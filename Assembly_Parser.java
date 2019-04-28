@@ -32,10 +32,11 @@ public class Assembly_Parser {
 	        	else{ 
 	        		  String instruction_copy = line;
 	        		  String i_copy = line;
-	        		  String arg1_copy = line;
-	        		  String arg2_copy = line;
-	        		  String arg3_copy = line;
+	        		  String arg1_copy = line;      /* Finds rd in format rd, rs, rt */
+	        		  String arg2_copy = line;      /* Finds rs in format rd, rs, rt */
+	        		  String arg3_copy = line;      /* Finds rt in format rd, rs, rt */
 	        		  
+	        		  /* Creates an array for the rd arguments */
 	        		  arg1_copy = arg1_copy.trim();
 	        		  if(arg1_copy.contains("$")) {
 	        			  arg1_copy = arg1_copy.split("\\$")[1];
@@ -45,6 +46,7 @@ public class Assembly_Parser {
 	        		     }
 	        		  }
 	        		  
+	        		  /* Creates an array for the rs arguments, ignores the instructions - sw, lw, j, jal, and jr */
 	        		  arg2_copy = arg2_copy.trim();
 	        		  if(arg2_copy.contains("$")) {
 	        			  if(arg2_copy.contains("sw") || arg2_copy.contains("lw") || arg2_copy.contains("j")) {}
@@ -57,6 +59,7 @@ public class Assembly_Parser {
 	        		     }
 	        		  }
 	        		  
+	        		  /* Creates an array for the rt arguments, ignores the instructions - sw, lw, j, jal, and jr */
 	        		  arg3_copy = arg3_copy.trim();
 	        		  if(arg3_copy.contains("$")) {
 	        			  if(arg3_copy.contains("sw") || arg3_copy.contains("lw") || arg3_copy.contains("j")) {}
@@ -64,10 +67,6 @@ public class Assembly_Parser {
 	        				  arg3_copy = arg3_copy.split(",")[2]; 
 	        				  arg3_copy = arg3_copy.split("#")[0];                      
 	        				  args3[i] = arg3_copy.trim();
-	        		          /*if(arg3_copy.contains(",")) {
-	        		        	 arg3_copy = arg3_copy.split("\\,")[0];
-	        		    	     
-	        		         }*/
 	        		     }
 	        		  }
 
@@ -80,11 +79,10 @@ public class Assembly_Parser {
 	        }
 	        
 	        for(int l = 1; l < args1.length -1 ; l++) {
+	        	  System.out.print(cmds[l] + "   ");
 	  	    	  System.out.print(args1[l] + "   ");
 	  	    	  System.out.print(args2[l] + "   ");
-	  	    	  System.out.print(cmds[l] + "   ");
 	  	    	  System.out.print(args3[l] + "   ");
-	  	    	  /*System.out.print(labels[l] + " ");*/
 	  	    	  System.out.print("\n");
 	  	    } 
 	       
@@ -93,6 +91,8 @@ public class Assembly_Parser {
 	        
 	        /* Writing opcodes to output text file */
 	        write_to_out(list, printer, cmds, args1, args2, args3, registers, labels); 
+	        
+	       
 	        
 	        /* Must close scanner and printer */
 	        sc.close();
@@ -215,71 +215,73 @@ public class Assembly_Parser {
         }	
 	}
 	
+	
+	
 	/* Takes arraylist, reads commands, finds opcodes for commands, prints to output */
 	public static void write_to_out(List<String> list, PrintWriter printer, String[] cmds, String[] args1, String[] args2, String[] args3, String[] registers, String[] labels) {
-		for(int y = 0; y < cmds.length; y++){                                  /* This loops writes out the elements that were    */
+		for(int y = 0; y < cmds.length; y++){                                 
 			   if(cmds[y] == null) {}
 			   else {
 				  if(args1[y] == null) {}
+				  else if(cmds[y].equals("sw")) {
+					  System.out.print(cmds[y] + " ");
+					  System.out.print(args1[y]);
+				  }
+				  else if(cmds[y].equals("lw")) {
+					  System.out.print(cmds[y] + " ");
+					  System.out.print(args1[y]);
+				  }
 				  else {
 					  if(args2[y] == null) {}
 					  else {
 						 if(args3[y] == null) {}
 						 else {
-							if(Arrays.asList(registers).contains(args3[y])) {
+							if(Arrays.asList(registers).contains(args3[y])) {                            /* If instruction is R-format */
 								String opr = opcode(cmds[y], args1[y], args2[y], args3[y]);   
-		     	                printer.write(opr);                                /* added to the list into a output text file.      */
+		     	                printer.write(opr);                                
 		                        printer.write("\n");
 							}
-							else if(Arrays.asList(labels).contains(args3[y])) {
+							else if(Arrays.asList(labels).contains(args3[y])) {                          /* If instruction contains a label */
 							    int li = Arrays.asList(labels).indexOf(args3[y]);
 							    int diff = 0;
 							    int jumps = 0;
 							    
-							    for(int k = 1; k < args3.length; k++) {
-							       
-							       String s = args3[k];
-							      
-							       
-							       if(s == null) {}
-							       else {
+							    for(int k = 1; k < args3.length; k++) {                                  /* 1.Find the index of label in label array */
+							       String s = args3[k];                                                  /* 2. Find the index of the label occurences in mips file */
+							       if(s == null) {}                                                      /* 3. Subtract 1 from 2 and add one */
+							       else {                                                                /* 4. Turn into negative number and convert into binary # */
                                       if(s.equals(labels[li])) {
-										   
-										   diff = (k - li) + 1;
+                                    	   diff = (k - li) + 1;
 										   jumps = 0 - diff;
-										   
-								    	   
-										   args3[k] = null;
+										   args3[k] = null;                                               /* Loops for every instruction, setting args3[k] to null helps not repeat the same index */
 		                                   break;
 									    
 									   }
 							       }  
 							    }
+							    
 							    String imm = convertBinary(jumps, 16);
-							   
 							    String opr = branch_opcode(cmds[y], args1[y], args2[y], imm);   
 		     	                printer.write(opr);                                                              /* added to the list into a output text file.      */
 		                        printer.write("\n");
 							}
-							else {
-								System.out.print(args3[y]);
-								
+							else {                                                                              /* Instructions with immediate as a third argument */
 								if(cmds[y].equals("addi")) {
 									String imm = convertBinary(Integer.parseInt(args3[y]), 16);
 									String opr = immediate_opcode(cmds[y], args1[y], args2[y], imm); 
-									 printer.write(opr);                                                      /* added to the list into a output text file.      */
+									 printer.write(opr);                                                      
 				                     printer.write("\n");
 								}
 								else if(cmds[y].equals("sll")) {
 									String imm1 = convertBinary(Integer.parseInt(args3[y]), 5);
 									String opr1 = sll_opcode(cmds[y], args1[y], args2[y], args3[y], imm1);
-									printer.write(opr1);                                                         /* added to the list into a output text file.      */
+									printer.write(opr1);                                                        
 			                        printer.write("\n");
 								}
 								else {
-									String imm1 = convertBinary(Integer.parseInt(args3[y]), 16);
+									String imm1 = convertBinary(Integer.parseInt(args3[y]), 16);                  /* For branch instructions */
 									String opr2 = branch_opcode(cmds[y], args2[y], args3[y], imm1); 
-			     	                printer.write(opr2);                                                        /* added to the list into a output text file.      */
+			     	                printer.write(opr2);                                                        
 			                        printer.write("\n");
 								}
 								
@@ -355,7 +357,8 @@ public class Assembly_Parser {
 	/* Check for valid instructions */
 	public static void check_instruction(String instr, String[] instructions)throws Exception{
 	    if(!Arrays.asList(instructions).contains(instr)){
-	       throw new Exception("NOT A VALID COMMAND");
+	    	System.out.print(instr);
+	       throw new Exception("NOT A VALID COMMAND:");
 	    }
 	}
 	
@@ -526,8 +529,8 @@ public class Assembly_Parser {
 		case "s7":
 			opcode = "10111";
 			break;
-		case "fp":
-			opcode = "11110";
+		case "sp":
+			opcode = "11101";
 			break;
 		case "ra":
 			opcode = "11111";
@@ -610,8 +613,8 @@ public class Assembly_Parser {
 		case "$s7":
 			opcode = "10111";
 			break;
-		case "$fp":
-			opcode = "11110";
+		case "$sp":
+			opcode = "11101";
 			break;
 		case "$ra":
 			opcode = "11111";
